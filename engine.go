@@ -39,10 +39,10 @@ func standardItems() []CleanItem {
 	return []CleanItem{
 		{Name: "Windows 临时文件", Path: systemRoot() + "\\Temp", Mode: ModeClearContents, Deep: false},
 		{Name: "用户临时文件", Path: userTemp(), Mode: ModeClearContents, Deep: false},
-		{Name: "系统预读(Prefetch)", Path: systemDrive() + "\\Prefetch", Mode: ModeDeleteTree, Deep: false},
+		{Name: "系统预读(Prefetch)", Path: filepath.Join(systemDrive(), "Prefetch"), Mode: ModeDeleteTree, Deep: false},
 		{Name: "缩略图缓存", Path: filepath.Join(localAppData(), "Microsoft", "Windows", "Explorer"), Mode: ModeClearContents, Deep: false},
 		{Name: "DNS 解析缓存目录", Path: filepath.Join(systemRoot(), "System32", "DnsCache"), Mode: ModeDeleteTree, Deep: false},
-		{Name: "Windows 更新下载缓存", Path: filepath.Join(systemRoot(), "Windows", "SoftwareDistribution", "Download"), Mode: ModeClearContents, Deep: false},
+		{Name: "Windows 更新下载缓存", Path: filepath.Join(systemRoot(), "SoftwareDistribution", "Download"), Mode: ModeClearContents, Deep: false},
 		{Name: "应用崩溃报告(WER)", Path: filepath.Join(allUsersProfile(), "Microsoft", "Windows", "WER"), Mode: ModeClearContents, Deep: false},
 	}
 }
@@ -52,7 +52,7 @@ func deepItems() []CleanItem {
 	cats := []CleanItem{
 		{Name: "回收站(系统盘)", Path: recycleBin(), Mode: ModeDeleteTree, Deep: true},
 		{Name: "系统级临时文件", Path: filepath.Join(systemRoot(), "Temp"), Mode: ModeClearContents, Deep: true},
-		{Name: "系统盘根目录临时", Path: systemDrive() + "\\Temp", Mode: ModeClearContents, Deep: true},
+		{Name: "系统盘根目录临时", Path: filepath.Join(systemDrive(), "Temp"), Mode: ModeClearContents, Deep: true},
 		{Name: "WinSxS 旧组件目录", Path: filepath.Join(systemRoot(), "WinSxS", "Backup"), Mode: ModeDeleteTree, Deep: true},
 		{Name: "旧系统备份(Windows.old)", Path: windowsOld(), Mode: ModeDeleteTree, Deep: true},
 	}
@@ -158,12 +158,21 @@ func walkSize(root string) (int64, int64) {
 	return count, bytes
 }
 
-// runItems 按模式执行全部条目。
+// OnProgress 每完成一个清理项时被调用，用于实时逐条输出进度。
+// 由调用方（main）在 runItems 前设置；为 nil 时不输出。
+var OnProgress func(seq int, total int, it CleanItem, res *Result)
+
+// runItems 按模式执行全部条目，逐条触发 OnProgress（实时可见进度）。
 func runItems(includeDeep bool) []*Result {
 	items := collectItems(includeDeep)
 	out := make([]*Result, 0, len(items))
-	for _, it := range items {
-		out = append(out, cleanItem(it))
+	total := len(items)
+	for i, it := range items {
+		res := cleanItem(it)
+		out = append(out, res)
+		if OnProgress != nil {
+			OnProgress(i+1, total, it, res)
+		}
 	}
 	return out
 }

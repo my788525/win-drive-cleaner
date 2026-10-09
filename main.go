@@ -10,13 +10,14 @@ import (
 )
 
 // 版本
-const version = "1.2.0"
+const version = "1.3.0"
 
 // 运行参数（由主流程填充）
 var (
-	noUAC    bool
-	elevated bool
-	noPause  bool // 不暂停，直接退出（脚本/CI 场景）
+	noUAC         bool
+	elevated      bool
+	noPause       bool // 不暂停，直接退出（脚本/CI 场景）
+	inInteractive bool // 处于交互菜单内：任务完成后返回菜单，不暂停
 )
 
 func main() {
@@ -56,6 +57,7 @@ func main() {
 		DryRun = true
 		execute(false, noUAC)
 	default:
+		inInteractive = true
 		interactive(noUAC)
 	}
 }
@@ -84,8 +86,24 @@ func execute(includeDeep, skipUAC bool) {
 	// 清理前剩余空间（真实值，用于前后对比）
 	freeBefore := freeSpaceOnSystemDrive()
 
+	// 逐条实时进度：每项完成后立即打印“正在/已完成清理什么 + 释放多少”
+	OnProgress = func(seq, total int, it CleanItem, res *Result) {
+		action := "跳过"
+		if res.Deleted > 0 || res.Bytes > 0 {
+			action = "已清理"
+		} else if res.Errors > 0 {
+			action = "部分受限"
+		}
+		if DryRun {
+			action = "预计"
+		}
+		fmt.Fprintf(os.Stdout, "  [%2d/%d] %-14s %s  %s\n", seq, total, it.Name, action, formatBytes(res.Bytes))
+		fmt.Fprintf(os.Stdout, "           └ %s\n", it.Path)
+	}
+
 	results := runItems(includeDeep)
 	printReport(os.Stdout, results, includeDeep, DryRun)
+	OnProgress = nil
 
 	// 清理后剩余空间 + 对比
 	if !DryRun {
@@ -114,8 +132,11 @@ func execute(includeDeep, skipUAC bool) {
 		fmt.Println("   ② 通讯软件旧文件 / 视频录屏：请在交互菜单选对应功能")
 	}
 
-	// 走到这里说明本进程真正执行了清理/演练（父进程提权成功后会在上面 return，不会到这里）
-	// 因此默认暂停，方便看清结果；仅 --no-pause 时自动结束
+	// 交互菜单内：不暂停，直接返回菜单，方便连续做下一项；只有选 q 才退出
+	// 命令行直接执行（非交互）：默认暂停方便看清结果；--no-pause 时自动结束
+	if inInteractive {
+		return
+	}
 	if !noPause {
 		pause()
 	}
@@ -130,49 +151,52 @@ func pause() {
 }
 
 func interactive(skipUAC bool) {
-	fmt.Println()
-	fmt.Println("================ Win 盘清理工具 ================")
-	fmt.Printf(" 系统: %s\n", osDescription())
-	fmt.Printf(" 权限: %s\n", adminStateLabel())
-	fmt.Println()
-	fmt.Println("  选择模式:")
-	fmt.Println("   1) 普通清理")
-	fmt.Println("   2) 深度清理(需管理员)")
-	fmt.Println("   3) 演练普通清理(不删除)")
-	fmt.Println("   4) 演练深度清理(不删除)")
-	fmt.Println("   5) 清理通讯软件旧文件(微信/QQ/企业微信)")
-	fmt.Println("   6) 查看 视频/录屏(仅提示大小，可打开所在文件夹手动删)")
-	fmt.Println("   7) DISM 组件清理(可选进阶)")
-	fmt.Println("   q) 退出")
-	fmt.Print("  请输入: ")
+	for {
+		fmt.Println()
+		fmt.Println("================ Win 盘清理工具 ================")
+		fmt.Printf(" 系统: %s\n", osDescription())
+		fmt.Printf(" 权限: %s\n", adminStateLabel())
+		fmt.Println()
+		fmt.Println("  选择模式:")
+		fmt.Println("   1) 普通清理")
+		fmt.Println("   2) 深度清理(需管理员)")
+		fmt.Println("   3) 演练普通清理(不删除)")
+		fmt.Println("   4) 演练深度清理(不删除)")
+		fmt.Println("   5) 清理通讯软件旧文件(微信/QQ/企业微信)")
+		fmt.Println("   6) 查看 视频/录屏(仅提示大小，可打开所在文件夹手动删)")
+		fmt.Println("   7) DISM 组件清理(可选进阶)")
+		fmt.Println("   q) 退出")
+		fmt.Print("  请输入: ")
 
-	var choice string
-	_, _ = fmt.Scanln(&choice)
-	switch choice {
-	case "1":
-		execute(false, skipUAC)
-		return
-	case "2":
-		execute(true, skipUAC)
-		return
-	case "3":
-		DryRun = true
-		execute(false, skipUAC)
-		return
-	case "4":
-		DryRun = true
-		execute(true, skipUAC)
-		return
-	case "5":
-		commsFlow()
-	case "6":
-		mediaFlow()
-	case "7":
-		RunDismCleanup(false)
-	}
-	// 交互菜单退出前也停一次，避免闪退（非提权、非 --no-pause）
-	if !noPause {
-		pause()
+		var choice string
+		_, _ = fmt.Scanln(&choice)
+		choice = strings.ToLower(strings.TrimSpace(choice))
+		switch choice {
+		case "1":
+			execute(false, skipUAC)
+		case "2":
+			execute(true, skipUAC)
+		case "3":
+			DryRun = true
+			execute(false, skipUAC)
+		case "4":
+			DryRun = true
+			execute(true, skipUAC)
+		case "5":
+			commsFlow()
+		case "6":
+			mediaFlow()
+		case "7":
+			RunDismCleanup(false)
+		case "q", "exit", "quit":
+			fmt.Println("  已退出。")
+			return
+		default:
+			fmt.Println("  未识别的选项，请重新输入。")
+			continue
+		}
+		// 做完一项，打印分隔并自动回到菜单，可继续做下一项
+		fmt.Println("\n  —— 已返回主菜单，可继续选择其他功能，输入 q 退出 ——")
 	}
 }
 
