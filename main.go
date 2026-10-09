@@ -10,7 +10,7 @@ import (
 )
 
 // 版本
-const version = "1.3.1"
+const version = "1.4.0"
 
 // 运行参数（由主流程填充）
 var (
@@ -30,6 +30,7 @@ func main() {
 	noPauseFlag := flag.Bool("no-pause", false, "不暂停直接退出（脚本/批处理场景）")
 	scanComms := flag.Bool("scan-comms", false, "扫描通讯软件旧文件(默认30天前，只统计)")
 	scanMedia := flag.Bool("scan-media", false, "扫描视频/录屏候选(只提示大小)")
+	autoFlag := flag.Bool("auto", false, "自动模式：倒计时后按上次设置执行（由登录自启调用，回车可取消）")
 	showHelp := flag.Bool("h", false, "显示帮助")
 	flag.Parse()
 
@@ -43,6 +44,8 @@ func main() {
 		printVersion()
 	case help:
 		printHelp()
+	case *autoFlag:
+		runAutoFlow()
 	case *scanComms:
 		CommsFlowReadOnly(30)
 	case *scanMedia:
@@ -165,6 +168,7 @@ func interactive(skipUAC bool) {
 		fmt.Println("   5) 清理通讯软件旧文件(微信/QQ/企业微信)")
 		fmt.Println("   6) 查看 视频/录屏(仅提示大小，可打开所在文件夹手动删)")
 		fmt.Println("   7) DISM 组件清理(可选进阶)")
+		fmt.Println("   8) 自启动管理(登录倒计时自动清理/取消/关闭自启)")
 		fmt.Println("   q) 退出")
 		fmt.Print("  请输入: ")
 
@@ -188,6 +192,8 @@ func interactive(skipUAC bool) {
 			mediaFlow()
 		case "7":
 			RunDismCleanup(false)
+		case "8":
+			manageAutostart()
 		case "q", "exit", "quit":
 			fmt.Println("  已退出。")
 			return
@@ -278,12 +284,14 @@ func printHelp() {
 	fmt.Println("  --no-pause            不暂停直接退出(脚本/批处理场景)")
 	fmt.Println("  --scan-comms          扫描通讯软件(微信/QQ/企业微信)旧文件, 只统计")
 	fmt.Println("  --scan-media          扫描视频/录屏候选, 只提示大小")
+	fmt.Println("  --auto                自动模式: 倒计时后按上次设置执行(登录自启调用)")
 	fmt.Println("  --version             打印版本")
 	fmt.Println("  --help                本帮助")
 	fmt.Println()
 	fmt.Println("交互菜单另有:")
 	fmt.Println("   5) 清理通讯软件旧文件(可指定 N 天)   6) 查看视频/录屏")
 	fmt.Println("   7) DISM 组件清理(可选进阶)")
+	fmt.Println("   8) 自启动管理: 开关登录自启、设倒计时、选普通/深度、关闭下次自启")
 	fmt.Println()
 	fmt.Println("说明: 每次清理结束后默认停在“按回车键退出”，方便看清结果；")
 	fmt.Println("      脚本自动化时加 --no-pause 可自动结束。")
