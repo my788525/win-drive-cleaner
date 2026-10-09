@@ -13,3 +13,6 @@ vendor/
 .DS_Store
 Thumbs.db
 *.log
+
+# 放行 SHA256 校验文件（随 release 提交）
+!/release/SHA256SUMS

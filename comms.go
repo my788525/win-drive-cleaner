@@ -91,6 +91,12 @@ func deleteCommsOlder(t CommsTarget, days int) (int64, int64, int64) {
 				return nil
 			}
 			if info.ModTime().Before(cutoff) {
+				if DryRun {
+					bytes += info.Size()
+					count++
+					return nil
+				}
+				logDeletion(p, info.Size())
 				if err := os.Remove(p); err != nil {
 					errs++
 					return nil

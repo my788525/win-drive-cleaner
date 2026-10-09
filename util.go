@@ -110,3 +110,29 @@ func osDescription() string {
 func nowStamp() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
+
+// ---------- 删除前备份日志（可追溯） ----------
+
+// logDir 日志目录：%LOCALAPPDATA%\WinDriveCleaner
+func logDir() string {
+	return filepath.Join(localAppData(), "WinDriveCleaner")
+}
+
+// logDeletion 把一条"即将删除"记录追加写入当日日志文件。
+// 失败静默（不影响清理主流程）。DryRun 时不记（没真删）。
+func logDeletion(path string, bytes int64) {
+	if DryRun {
+		return
+	}
+	if err := os.MkdirAll(logDir(), 0755); err != nil {
+		return
+	}
+	fname := "CleanerLog_" + time.Now().Format("20060102") + ".txt"
+	f, err := os.OpenFile(filepath.Join(logDir(), fname), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_, _ = fmt.Fprintf(f, "[%s] %s  (%s)\n", nowStamp(), path, formatBytes(bytes))
+}
+

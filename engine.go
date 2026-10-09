@@ -97,6 +97,8 @@ func (r *Result) deleteFile(path string, size int64) {
 		r.Bytes += size
 		return
 	}
+	// 删前先记日志（可追溯）
+	logDeletion(path, size)
 	if err := os.Remove(path); err != nil {
 		r.Errors++
 		return
@@ -132,15 +134,21 @@ func (r *Result) deleteTree(dir string) {
 		r.Bytes += b
 		return
 	}
+	// 删前先估算总大小并记日志（可追溯）
+	_, beforeBytes := walkSize(dir)
+	logDeletion(dir, beforeBytes)
 	// 先尝试直接整删；失败多因文件占用，退化为清空内容
 	if err := os.RemoveAll(dir); err == nil {
-		// 估算删除量
-		_, b := walkSize(dir) // 已删，返回 0，仅保留计数语义
-		_ = b
 		r.Deleted++
+		r.Bytes += beforeBytes
 		return
 	}
 	r.clearContents(dir)
+	// 整删失败退化为清空内容时，统计实际清空量并补充日志
+	after, _ := walkSize(dir)
+	if removed := beforeBytes - after; removed > 0 {
+		r.Bytes += removed
+	}
 }
 
 func walkSize(root string) (int64, int64) {
