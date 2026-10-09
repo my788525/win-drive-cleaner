@@ -7,12 +7,13 @@ import (
 )
 
 // 版本
-const version = "1.0.0"
+const version = "1.1.0"
 
 // 运行参数（由主流程填充）
 var (
 	noUAC    bool
 	elevated bool
+	noPause  bool // 不暂停，直接退出（脚本/CI 场景）
 )
 
 func main() {
@@ -21,12 +22,14 @@ func main() {
 	dryRunFlag := flag.Bool("dry-run", false, "演练模式：只统计，不删除")
 	verFlag := flag.Bool("version", false, "打印版本")
 	noUACFlag := flag.Bool("no-uac", false, "跳过 UAC 提权（以当前权限运行）")
-	elevatedFlag := flag.Bool("elevated", false, "内部标记：已提权进程，结束时暂停")
+	elevatedFlag := flag.Bool("elevated", false, "内部标记：已提权子进程，结束不暂停")
+	noPauseFlag := flag.Bool("no-pause", false, "不暂停直接退出（脚本/批处理场景）")
 	showHelp := flag.Bool("h", false, "显示帮助")
 	flag.Parse()
 
 	noUAC = *noUACFlag
 	elevated = *elevatedFlag
+	noPause = *noPauseFlag
 	stand, deep, dry, ver, help := *stdFlag, *deepFlag, *dryRunFlag, *verFlag, *showHelp
 
 	switch {
@@ -50,15 +53,17 @@ func main() {
 
 // execute 按模式执行清理（含 UAC 提权判断）。
 func execute(includeDeep, skipUAC bool) {
-	// 深度清理需管理员；普通清理尽量无需提权，但系统级目录可能需要。
-	needElev := includeDeep
-	if !skipUAC && needElev && !isAdmin() {
+	// 深度清理需管理员；非管理员时自动请求 UAC 提权
+	if includeDeep && !skipUAC && !isAdmin() {
 		fmt.Println("  深度清理需要管理员权限，正在请求 UAC 提权…")
 		if err := elevateSelf(); err != nil {
 			fmt.Println("  提权失败:", err)
+			// 提权失败也要暂停，让用户看到原因
+			pause()
 			os.Exit(2)
 		}
-		return // 提权成功后，由新进程继续
+		// 提权成功：父进程结束，子进程（elevated=true）接管并负责暂停
+		return
 	}
 
 	fmt.Printf(" [%s] %s\n", nowStamp(), osDescription())
@@ -67,8 +72,24 @@ func execute(includeDeep, skipUAC bool) {
 	}
 	fmt.Println()
 
+	// 清理前剩余空间（真实值，用于前后对比）
+	freeBefore := freeSpaceOnSystemDrive()
+
 	results := runItems(includeDeep)
 	printReport(os.Stdout, results, includeDeep, DryRun)
+
+	// 清理后剩余空间 + 对比
+	if !DryRun {
+		freeAfter := freeSpaceOnSystemDrive()
+		if freeBefore >= 0 && freeAfter >= 0 {
+			fmt.Fprintf(os.Stdout, "  磁盘剩余空间: %s  ->  %s\n", formatBytes(freeBefore), formatBytes(freeAfter))
+			if freeAfter > freeBefore {
+				fmt.Fprintf(os.Stdout, "  实测释放: %s\n", formatBytes(freeAfter-freeBefore))
+			} else {
+				fmt.Fprintf(os.Stdout, "  （文件删除后磁盘计数可能略有延迟，数值以“已释放”统计为准）\n")
+			}
+		}
+	}
 
 	if !DryRun && includeDeep {
 		fmt.Println()
@@ -76,12 +97,19 @@ func execute(includeDeep, skipUAC bool) {
 		fmt.Println("      DISM /Online /Cleanup-Image /StartComponentCleanup")
 	}
 
-	// 提权重启的进程结束后暂停，避免窗口一闪而过
-	if elevated {
-		fmt.Println()
-		fmt.Print("  按回车键退出…")
-		fmt.Scanln()
+	// 走到这里说明本进程真正执行了清理/演练（父进程提权成功后会在上面 return，不会到这里）
+	// 因此默认暂停，方便看清结果；仅 --no-pause 时自动结束
+	if !noPause {
+		pause()
 	}
+}
+
+// pause 停住等待回车，避免窗口一闪而过。
+func pause() {
+	fmt.Println()
+	fmt.Print("  按回车键退出…")
+	var dummy string
+	_, _ = fmt.Scanln(&dummy)
 }
 
 func interactive(skipUAC bool) {
@@ -112,6 +140,10 @@ func interactive(skipUAC bool) {
 		DryRun = true
 		execute(true, skipUAC)
 	}
+	// 交互菜单退出前也停一次，避免闪退（非提权、非 --no-pause）
+	if !elevated && !noPause {
+		pause()
+	}
 }
 
 func printVersion() {
@@ -124,12 +156,16 @@ func printHelp() {
 	fmt.Println()
 	fmt.Println("用法:")
 	fmt.Println("  直接运行              进入交互菜单")
-	fmt.Println("  --standard           普通清理(低风险)")
-	fmt.Println("  --deep               深度清理(需管理员, 释放空间更多)")
-	fmt.Println("  --dry-run            演练: 只统计大小, 不删除")
-	fmt.Println("  --no-uac             跳过 UAC 提权")
-	fmt.Println("  --version            打印版本")
-	fmt.Println("  --help               本帮助")
+	fmt.Println("  --standard            普通清理(低风险)")
+	fmt.Println("  --deep                深度清理(需管理员, 释放空间更多)")
+	fmt.Println("  --dry-run             演练: 只统计大小, 不删除")
+	fmt.Println("  --no-uac              跳过 UAC 提权")
+	fmt.Println("  --no-pause            不暂停直接退出(脚本/批处理场景)")
+	fmt.Println("  --version             打印版本")
+	fmt.Println("  --help                本帮助")
+	fmt.Println()
+	fmt.Println("说明: 每次清理结束后默认停在“按回车键退出”，方便看清结果；")
+	fmt.Println("      脚本自动化时加 --no-pause 可自动结束。")
 }
 
 func adminStateLabel() string {

@@ -25,6 +25,7 @@ type CleanItem struct {
 // Result 记录一次清理结果。
 type Result struct {
 	Name    string
+	Path    string
 	Deleted int
 	Bytes   int64 // 实际删除字节（dry-run 时为估算）
 	Errors  int
@@ -69,7 +70,7 @@ func collectItems(includeDeep bool) []CleanItem {
 
 // cleanItem 执行单个条目。
 func cleanItem(it CleanItem) *Result {
-	res := &Result{Name: it.Name}
+	res := &Result{Name: it.Name, Path: it.Path}
 	pi, err := os.Lstat(it.Path)
 	if err != nil {
 		return res // 不存在：正常跳过

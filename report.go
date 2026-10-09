@@ -25,12 +25,16 @@ func printReport(out io.Writer, results []*Result, includeDeep, dryRun bool) {
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "==================== 清理结果 ====================")
 	fmt.Fprintf(out, " 模式: %s | 项数: %d | 错误: %d\n", mode, deleted, errs)
+	fmt.Fprintln(out)
 
 	for _, r := range results {
 		if r.Bytes == 0 && r.Deleted == 0 {
 			continue
 		}
-		fmt.Fprintf(out, "   %-22s %s  %s\n", r.Name+":", verb, formatBytes(r.Bytes))
+		fmt.Fprintf(out, "  %-20s  %s  %s\n", r.Name, verb, formatBytes(r.Bytes))
+		if r.Path != "" {
+			fmt.Fprintf(out, "      └ %s\n", r.Path)
+		}
 	}
 
 	fmt.Fprintln(out, "---------------------------------------------")

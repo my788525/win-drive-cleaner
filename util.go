@@ -106,14 +106,6 @@ func osDescription() string {
 	return fmt.Sprintf("系统盘=%s  WINDIR=%s  架构=%s", systemDrive(), wd, u)
 }
 
-// freeSpaceOnC 返回系统盘剩余空间（字节）。best effort，失败返回 0。
-func freeSpaceOnSystemDrive() int64 {
-	root := systemDrive()
-	// 不同运行时有 statfs；用 os 的简化方式：无法跨平台通用，这里退化为 0 表示未知。
-	_ = root
-	return 0
-}
-
 // nowStamp 返回当前时间戳字符串，用于日志头。
 func nowStamp() string {
 	return time.Now().Format("2006-01-02 15:04:05")
