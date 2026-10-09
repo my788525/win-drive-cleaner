@@ -10,7 +10,7 @@ import (
 )
 
 // 版本
-const version = "1.5.0"
+const version = "1.5.1"
 
 // 运行参数（由主流程填充）
 var (
@@ -32,6 +32,7 @@ func main() {
 	scanMedia := flag.Bool("scan-media", false, "扫描视频/录屏候选(只提示大小)")
 	scanCache := flag.Bool("scan-cache", false, "扫描 AppData 软件缓存大小 Top N(只统计)")
 	scanBigFiles := flag.Bool("scan-bigfiles", false, "扫描 ≥500MB 大文件 Top 20(只列不删)")
+	compactFlag := flag.Bool("compact", false, "执行系统盘压缩(compact /Compact, 需管理员, Win10/11)")
 	autoFlag := flag.Bool("auto", false, "自动模式：倒计时后按上次设置执行（由登录自启调用，回车可取消）")
 	showHelp := flag.Bool("h", false, "显示帮助")
 	flag.Parse()
@@ -56,6 +57,8 @@ func main() {
 		CacheFlowReadOnly()
 	case *scanBigFiles:
 		BigFilesFlowReadOnly()
+	case *compactFlag:
+		RunCompact(false)
 	case deep:
 		DryRun = dry
 		execute(true, noUAC)
@@ -177,6 +180,7 @@ func interactive(skipUAC bool) {
 		fmt.Println("   8) 自启动管理(登录倒计时自动清理/取消/关闭自启)")
 		fmt.Println("   9) AppData 软件缓存(看大小, 可勾选删除指定软件)")
 		fmt.Println("  10) 大文件检测(≥500MB, Top20, 只列不删)")
+		fmt.Println("  11) 系统盘压缩(compact LZX, 需管理员, Win10/11)")
 		fmt.Println("   q) 退出")
 		fmt.Print("  请输入: ")
 
@@ -206,6 +210,8 @@ func interactive(skipUAC bool) {
 			cacheFlow()
 		case "10":
 			bigFileFlow()
+		case "11":
+			RunCompact(false)
 		case "q", "exit", "quit":
 			fmt.Println("  已退出。")
 			return
@@ -298,6 +304,7 @@ func printHelp() {
 	fmt.Println("  --scan-media          扫描视频/录屏候选, 只提示大小")
 	fmt.Println("  --scan-cache          扫描 AppData 软件缓存大小 Top N, 只统计")
 	fmt.Println("  --scan-bigfiles       扫描 ≥500MB 大文件 Top 20, 只列不删")
+	fmt.Println("  --compact             执行系统盘压缩(compact LZX, 需管理员, Win10/11)")
 	fmt.Println("  --auto                自动模式: 倒计时后按上次设置执行(登录自启调用)")
 	fmt.Println("  --version             打印版本")
 	fmt.Println("  --help                本帮助")
@@ -308,6 +315,7 @@ func printHelp() {
 	fmt.Println("   8) 自启动管理: 开关登录自启、设倒计时、选普通/深度、关闭下次自启")
 	fmt.Println("   9) AppData 软件缓存: 看大小, 可勾选删除指定软件目录")
 	fmt.Println("  10) 大文件检测: ≥500MB Top20, 只列不删, 可打开所在文件夹")
+	fmt.Println("  11) 系统盘压缩: compact LZX 就地压缩 C:\\Windows, 释放 1-3GB (Win10/11, 可逆)")
 	fmt.Println()
 	fmt.Println("说明: 每次清理结束后默认停在“按回车键退出”，方便看清结果；")
 	fmt.Println("      脚本自动化时加 --no-pause 可自动结束。")

@@ -20,10 +20,12 @@
   - 清理/演练结束后**默认停在"按回车键退出…"**，方便阅读；脚本自动化时用 `--no-pause` 自动结束。
 - **登录自启（可选）**：交互菜单第 8) 项可注册登录自启，每次开机倒计时后按上次设置自动执行；倒计时内按任意键可取消，也可一键关闭下次自启。仅写当前用户 Run 键，不碰系统注册表、无需管理员。
 - **软件缓存 / 大文件清单**：菜单 9) 查看 AppData 各软件缓存目录大小并勾选删除；菜单 10) 列出系统盘 ≥500MB 大文件 Top 20（只列不删）。
+- **系统盘压缩**：菜单 11) 用 Windows 自带 `compact` LZX 就地压缩 `C:\Windows`，释放 1-3GB（Win10/11，可逆，需管理员）。
 - **删除可追溯**：所有删除前会把「路径+大小」写入 `%LOCALAPPDATA%\WinDriveCleaner\CleanerLog_<日期>.txt`，随时可查"刚才到底删了什么"。
 
 ## 更新日志
 
+- **v1.5.1**：新增「11) 系统盘压缩」。调用 Windows 10/11 自带 `compact /Compact /BaseFile:C:\compact.sys /EssentialDirectories`，把 `C:\Windows` 内文件就地 LZX 压缩，通常释放 **1-3GB**（机械硬盘收益最大）。可逆（`compact /decompress` 恢复）。自动检测系统是否支持（Win8/7 无 LZX 会跳过），需管理员。新增 `--compact` CLI 参数。
 - **v1.5.0**：新增三项体验增强 + SHA256 校验。① 「9) AppData 软件缓存」：扫描 `%LOCALAPPDATA%`/`%APPDATA%` 下各软件目录大小 Top 15，可勾选删除指定软件目录（删除前把清单写入日志，可追溯）；② 「10) 大文件检测」：扫描系统盘 ≥500MB 文件 Top 20（排除系统目录/保留文件），只列不删，可按 B 序号打开所在文件夹；③ 删除前备份日志：所有删除（普通/深度/缓存/通讯）前把「路径+大小」追加写入 `%LOCALAPPDATA%\WinDriveCleaner\CleanerLog_<日期>.txt`，可追溯；④ GitHub release 附 `SHA256SUMS`，用户可 `certutil -hashfile` 或 `sha256sum -c` 验证下载未被篡改。
 - **v1.4.0**：新增「登录自启 + 倒计时自动执行」。交互菜单加第 8) 项「自启动管理」：可一键开关登录自启、设置倒计时秒数、选普通/深度模式、关闭下次自启。登录自启经系统 Run 键（仅当前用户，无需管理员，不写系统注册表）以 `--auto` 启动，读取上次保存的设置自动执行；默认 30 秒倒计时，倒计时内按任意键可取消本次执行（取消不删任何文件），取消后提示如何用菜单 8 关闭自启。设置存于 `%LOCALAPPDATA%\WinDriveCleaner\settings.json`。
 - **v1.3.1**：修复「视频/录屏检测」闪退 bug——`printMediaScan` 的 `top` 当候选文件少于默认 20 时未做上限收敛，导致 `files[i]` 数组越界 panic、窗口一闪而过；现改为 `top = min(top, len(files))`，任何文件数下都不越界。
