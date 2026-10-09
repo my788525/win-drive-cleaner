@@ -66,8 +66,11 @@ func printMediaScan(top int) {
 		fmt.Println("  未在常见目录发现视频/录屏文件。")
 		return
 	}
-	if top <= 0 || top > len(files) {
+	if top <= 0 {
 		top = 20
+	}
+	if top > len(files) {
+		top = len(files) // clamp 到实际数量，避免 files[i] 越界 panic 导致闪退
 	}
 	mediaIndex = nil
 	mediaDirs = nil
