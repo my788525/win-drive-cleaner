@@ -1,0 +1,120 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+)
+
+// ---------- 字节格式化 ----------
+
+func formatBytes(n int64) string {
+	if n < 0 {
+		return "0 B"
+	}
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+		TB = GB * 1024
+	)
+	switch {
+	case n >= TB:
+		return fmt.Sprintf("%.2f TB", float64(n)/float64(TB))
+	case n >= GB:
+		return fmt.Sprintf("%.2f GB", float64(n)/float64(GB))
+	case n >= MB:
+		return fmt.Sprintf("%.2f MB", float64(n)/float64(MB))
+	case n >= KB:
+		return fmt.Sprintf("%.1f KB", float64(n)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", n)
+	}
+}
+
+// ---------- 路径解析（基于环境变量，兼容 Win8/10/11） ----------
+
+// systemDrive 返回系统盘根目录，如 "C:\"。
+func systemDrive() string {
+	sd := strings.TrimSpace(os.Getenv("SystemDrive"))
+	if sd == "" {
+		sd = "C:"
+	}
+	return filepath.Clean(sd + "\\")
+}
+
+// systemRoot 返回 Windows 目录，如 "C:\Windows"。
+func systemRoot() string {
+	sr := strings.TrimSpace(os.Getenv("SystemRoot"))
+	if sr == "" {
+		sr = systemDrive() + "Windows"
+	}
+	return filepath.Clean(sr)
+}
+
+// localAppData 返回 %LOCALAPPDATA%。
+func localAppData() string {
+	if v := strings.TrimSpace(os.Getenv("LOCALAPPDATA")); v != "" {
+		return v
+	}
+	up := userProfile()
+	return filepath.Join(up, "AppData", "Local")
+}
+
+// userProfile 返回 %USERPROFILE%。
+func userProfile() string {
+	return strings.TrimSpace(os.Getenv("USERPROFILE"))
+}
+
+// allUsersProfile 返回 %ALLUSERSPROFILE%（C:\ProgramData）。
+func allUsersProfile() string {
+	if v := strings.TrimSpace(os.Getenv("ALLUSERSPROFILE")); v != "" {
+		return v
+	}
+	return systemDrive() + "ProgramData"
+}
+
+// userTemp 返回当前用户临时目录 %TEMP%。
+func userTemp() string {
+	if v := strings.TrimSpace(os.Getenv("TEMP")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(os.Getenv("TMP")); v != "" {
+		return v
+	}
+	return filepath.Join(localAppData(), "Temp")
+}
+
+// recycleBin 返回系统盘回收站 $Recycle.Bin。
+func recycleBin() string {
+	return filepath.Join(systemDrive(), "$Recycle.Bin")
+}
+
+// windowsOld 返回旧的 Windows.old 目录。
+func windowsOld() string {
+	return filepath.Join(systemDrive(), "Windows.old")
+}
+
+// ---------- 系统信息 ----------
+
+func osDescription() string {
+	u := runtime.GOOS + "/" + runtime.GOARCH
+	wd := systemRoot()
+	return fmt.Sprintf("系统盘=%s  WINDIR=%s  架构=%s", systemDrive(), wd, u)
+}
+
+// freeSpaceOnC 返回系统盘剩余空间（字节）。best effort，失败返回 0。
+func freeSpaceOnSystemDrive() int64 {
+	root := systemDrive()
+	// 不同运行时有 statfs；用 os 的简化方式：无法跨平台通用，这里退化为 0 表示未知。
+	_ = root
+	return 0
+}
+
+// nowStamp 返回当前时间戳字符串，用于日志头。
+func nowStamp() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}

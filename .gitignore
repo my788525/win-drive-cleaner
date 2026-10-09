@@ -1,0 +1,15 @@
+# Go build artifacts
+*.exe
+*.zip
+/dist
+/bin
+/out
+
+# Go workspace / cache
+.gopath/
+vendor/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log
