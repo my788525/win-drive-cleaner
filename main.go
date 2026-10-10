@@ -10,7 +10,7 @@ import (
 )
 
 // 版本
-const version = "1.6.0"
+const version = "1.6.1"
 
 // 运行参数（由主流程填充）
 var (

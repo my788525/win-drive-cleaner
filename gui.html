@@ -13,7 +13,7 @@
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{font:14px/1.5 -apple-system,"Segoe UI",Roboto,"Microsoft YaHei",sans-serif;
-    background:var(--bg);color:var(--ink);display:flex}
+    background:var(--bg);color:var(--ink);display:flex;overflow:hidden}
   #side{width:212px;background:#0f172a;color:#cbd5e1;flex:0 0 212px;
     display:flex;flex-direction:column;padding:14px 10px}
   #side h1{font-size:15px;color:#fff;margin:4px 8px 14px;font-weight:700;letter-spacing:.5px}
@@ -22,13 +22,14 @@
     border-radius:8px;cursor:pointer;font-size:13.5px}
   .nav button:hover{background:#1e293b;color:#fff}
   .nav button.on{background:var(--brand);color:#fff;font-weight:600}
-  #side .foot{margin-top:auto;font-size:11px;color:#64748b;padding:8px}
+  #side .foot{margin-top:auto;font-size:11px;color:#64748b;padding:8px;line-height:1.6}
   #main{flex:1;display:flex;flex-direction:column;min-width:0}
   #top{height:54px;background:var(--panel);border-bottom:1px solid var(--line);
-    display:flex;align-items:center;padding:0 18px;gap:14px}
+    display:flex;align-items:center;padding:0 18px;gap:10px;flex:0 0 auto}
   #top .title{font-weight:700;font-size:15px}
   #top .sp{flex:1}
-  .badge{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--brand-d)}
+  .badge{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--brand-d);
+    white-space:nowrap}
   .badge.bad{background:#fee2e2;color:var(--bad)}
   .badge.ok{background:#dcfce7;color:var(--ok)}
   #content{padding:18px;overflow:auto;flex:1}
@@ -44,13 +45,16 @@
   button.btn.ghost:hover{background:#e0e7ff}
   button.btn:disabled{opacity:.5;cursor:not-allowed}
   button.btn.warn{background:var(--warn)}
+  button.btn.sm{padding:5px 10px;font-size:12px}
   label.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
   th{color:var(--muted);font-weight:600;background:#fafafa}
   tr:hover td{background:#f9fafb}
-  .mono{font-family:ui-monospace,Consolas,Menlo,monospace;font-size:12px;color:#374151}
-  .pill{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--brand-d)}
+  .mono{font-family:ui-monospace,Consolas,Menlo,monospace;font-size:12px;color:#374151;
+    word-break:break-all}
+  .pill{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--brand-d);
+    white-space:nowrap}
   .pill.grey{background:#f1f5f9;color:#475569}
   .sw{position:relative;width:42px;height:22px;display:inline-block}
   .sw input{display:none}
@@ -59,20 +63,30 @@
     border-radius:50%;transition:.2s}
   .sw input:checked + .tk{background:var(--ok)}
   .sw input:checked + .tk:before{transform:translateX(20px)}
+  .sw input:disabled + .tk{opacity:.4;cursor:not-allowed}
   #log{background:#0f172a;color:#d1fae5;font:12.5px/1.6 ui-monospace,Consolas,monospace;
-    border-radius:10px;padding:12px;height:220px;overflow:auto;white-space:pre-wrap}
+    border-radius:10px;padding:12px;height:240px;overflow:auto;white-space:pre-wrap}
   .bar{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:8px 0}
   .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3b82f6,#22d3ee);transition:width .2s}
-  .pg{display:none}
   .kpi{display:flex;gap:14px;flex-wrap:wrap}
   .kpi .b{flex:1;min-width:130px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:12px}
   .kpi .b .n{font-size:20px;font-weight:700}
   .kpi .b .l{color:var(--muted);font-size:12px}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;
-    padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none}
+    padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;
+    z-index:50;max-width:70vw;text-align:center}
   .toast.show{opacity:1}
   .sec{display:none}
   .sec.on{display:block}
+  .busy{display:none;align-items:center;gap:8px;color:var(--brand-d);font-size:13px;margin-top:8px}
+  .busy.on{display:inline-flex}
+  .spin{width:13px;height:13px;border:2px solid #c7d2fe;border-top-color:var(--brand);border-radius:50%;
+    animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .busy-txt{color:var(--muted)}
+  .warnbox{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;
+    font-size:12.5px;color:#92400e;margin-top:8px}
+  .warnbox b{color:#78350f}
 </style>
 </head>
 <body>
@@ -86,9 +100,10 @@
       <button data-sec="comms">通讯缓存</button>
       <button data-sec="media">视频媒体</button>
       <button data-sec="tools">系统工具</button>
+      <button data-sec="log">清理日志</button>
       <button data-sec="disk">磁盘信息</button>
     </div>
-    <div class="foot">v1.6 · WebView2 原生窗口</div>
+    <div class="foot">v1.6.1 · WebView2 原生窗口<br>绿色单文件 · 无需安装</div>
   </aside>
 
   <main id="main">
@@ -96,6 +111,7 @@
       <span class="title" id="secTitle">磁盘清理</span>
       <span class="sp"></span>
       <span class="badge" id="adminBadge">权限检测中…</span>
+      <button class="btn ghost sm" id="btnElevate" style="display:none">提权重启</button>
       <span class="badge" id="diskBadge">磁盘…</span>
     </div>
     <div id="content">
@@ -108,38 +124,37 @@
             <label class="chk"><input type="radio" name="mode" value="deep"> 深度清理（需管理员）</label>
             <label class="chk"><input type="checkbox" id="dryRun"> 演练模式（只统计不删除）</label>
           </div>
-          <p class="hint">普通清理覆盖临时文件/预读/缩略图/更新缓存等；深度清理额外含回收站、WinSxS 备份、Windows.old 等。演练模式先看清会动哪些。</p>
+          <p class="hint">普通清理覆盖临时文件/预读/缩略图/更新缓存等；深度清理额外含回收站、WinSxS 备份、Windows.old 等。建议先跑演练模式看清要动哪些。</p>
           <div class="row">
             <button class="btn" id="btnClean">开始清理</button>
-            <button class="btn ghost" id="btnCleanStop" disabled>停止</button>
+            <button class="btn warn" id="btnCleanStop" disabled>停止</button>
+            <span class="busy" id="cleanBusy"><span class="spin"></span><span class="busy-txt">清理进行中…</span></span>
           </div>
         </div>
-        <div class="card pg">
+        <div class="card" id="pgCard" style="display:none">
           <div class="bar"><i id="cleanBar"></i></div>
           <div id="log"></div>
         </div>
         <div class="card" id="cleanSum" style="display:none">
           <h2>清理结果</h2>
-          <div class="kpi">
-            <div class="b"><div class="n" id="sumDel">0</div><div class="l">删除项</div></div>
-            <div class="b"><div class="n" id="sumErr">0</div><div class="l">失败项</div></div>
-            <div class="b"><div class="n" id="sumBytes">0</div><div class="l">释放空间</div></div>
-          </div>
+          <div class="kpi" id="cleanKpi"></div>
+          <p class="hint" id="cleanNote"></p>
         </div>
       </section>
 
       <section class="sec" id="sec-startup">
         <div class="card">
           <h2>开机自启管理</h2>
-          <p class="hint">下列为 Windows 开机自动启动的程序/快捷方式。关闭开关即禁用该项（沿用任务管理器机制，<b>完全可逆</b>）；标记为"需管理员"的来自 HKLM，非管理员下无法修改。</p>
+          <p class="hint">下列为 Windows 开机自动启动的程序/快捷方式。关闭开关即禁用该项（沿用任务管理器原生机制，<b>完全可逆</b>）；标记"需管理员"的来自 HKLM，非管理员下无法修改。</p>
           <div class="row">
             <button class="btn" id="btnStartScan">刷新列表</button>
+            <span class="busy" id="startBusy"><span class="spin"></span><span class="busy-txt">读取中…</span></span>
             <span class="muted" id="startCount"></span>
           </div>
         </div>
         <div class="card">
           <table>
-            <thead><tr><th style="width:46px">状态</th><th>名称</th><th>来源</th><th>命令 / 路径</th><th style="width:70px"></th></tr></thead>
+            <thead><tr><th style="width:46px">状态</th><th>名称</th><th>来源</th><th>命令 / 路径</th><th style="width:80px"></th></tr></thead>
             <tbody id="startBody"></tbody>
           </table>
         </div>
@@ -148,10 +163,14 @@
       <section class="sec" id="sec-big">
         <div class="card">
           <h2>大文件检测（≥500MB · Top 20，只列不删）</h2>
-          <div class="row"><button class="btn" id="btnBig">扫描</button></div>
+          <p class="hint">已排除 Windows / Program Files / ProgramData 等系统目录与 pagefile.sys 等保留文件。</p>
+          <div class="row">
+            <button class="btn" id="btnBig">扫描</button>
+            <span class="busy" id="bigBusy"><span class="spin"></span><span class="busy-txt">全盘扫描中，通常需 10-60 秒…</span></span>
+          </div>
         </div>
         <div class="card"><table>
-          <thead><tr><th>大小</th><th>路径</th><th style="width:90px"></th></tr></thead>
+          <thead><tr><th style="width:110px">大小</th><th>路径</th><th style="width:90px"></th></tr></thead>
           <tbody id="bigBody"></tbody>
         </table></div>
       </section>
@@ -159,14 +178,15 @@
       <section class="sec" id="sec-cache">
         <div class="card">
           <h2>AppData 软件缓存（≥10MB）</h2>
-          <p class="hint">勾选后点"删除所选"会清空该软件缓存/数据目录（可能丢失登录态/设置，<b>不可恢复</b>）。</p>
+          <p class="hint">勾选后点"删除所选"会清空该软件缓存/数据目录（可能丢失登录态/设置，<b>不可恢复</b>）。删除前会自动写入审计日志。</p>
           <div class="row">
             <button class="btn" id="btnCache">扫描</button>
-            <button class="btn warn" id="btnCacheDel">删除所选</button>
+            <button class="btn warn" id="btnCacheDel" disabled>删除所选</button>
+            <span class="busy" id="cacheBusy"><span class="spin"></span><span class="busy-txt">统计中…</span></span>
           </div>
         </div>
         <div class="card"><table>
-          <thead><tr><th style="width:36px"></th><th>软件</th><th>大小</th><th>路径</th></tr></thead>
+          <thead><tr><th style="width:36px"></th><th>软件</th><th style="width:110px">大小</th><th>路径</th></tr></thead>
           <tbody id="cacheBody"></tbody>
         </table></div>
       </section>
@@ -174,11 +194,14 @@
       <section class="sec" id="sec-comms">
         <div class="card">
           <h2>通讯软件缓存（微信 / QQ / 企业微信，只读）</h2>
-          <p class="hint">展示各软件本地缓存与历史文件目录及预估大小，便于你手动在软件内清理或打开所在文件夹。</p>
-          <div class="row"><button class="btn" id="btnComms">扫描</button></div>
+          <p class="hint">展示各软件本地缓存与历史文件目录及大小，便于你手动在软件内清理或打开所在文件夹。</p>
+          <div class="row">
+            <button class="btn" id="btnComms">扫描</button>
+            <span class="busy" id="commsBusy"><span class="spin"></span><span class="busy-txt">统计中…</span></span>
+          </div>
         </div>
         <div class="card"><table>
-          <thead><tr><th>软件</th><th>大小</th><th>目录</th><th style="width:90px"></th></tr></thead>
+          <thead><tr><th>软件</th><th style="width:110px">大小</th><th>目录</th><th style="width:90px"></th></tr></thead>
           <tbody id="commsBody"></tbody>
         </table></div>
       </section>
@@ -186,10 +209,13 @@
       <section class="sec" id="sec-media">
         <div class="card">
           <h2>视频 / 录屏媒体文件（只读）</h2>
-          <div class="row"><button class="btn" id="btnMedia">扫描</button></div>
+          <div class="row">
+            <button class="btn" id="btnMedia">扫描</button>
+            <span class="busy" id="mediaBusy"><span class="spin"></span><span class="busy-txt">扫描中…</span></span>
+          </div>
         </div>
         <div class="card"><table>
-          <thead><tr><th>大小</th><th>路径</th><th style="width:90px"></th></tr></thead>
+          <thead><tr><th style="width:110px">大小</th><th>路径</th><th style="width:90px"></th></tr></thead>
           <tbody id="mediaBody"></tbody>
         </table></div>
       </section>
@@ -197,13 +223,30 @@
       <section class="sec" id="sec-tools">
         <div class="card">
           <h2>系统工具（需管理员）</h2>
-          <p class="hint">以下操作调用系统 dism / compact，建议在以管理员身份运行本程序后使用。</p>
+          <p class="hint">以下操作调用系统 dism / compact，耗时较长（DISM 可能数分钟），执行期间界面保持响应。</p>
           <div class="row">
             <button class="btn" id="btnDism">DISM 清理更新组件</button>
             <button class="btn" id="btnCompact">系统盘压缩 (compact LZX)</button>
+            <span class="busy" id="toolsBusy"><span class="spin"></span><span class="busy-txt" id="toolsBusyTxt">执行中…</span></span>
           </div>
-          <p class="hint" id="toolsNote"></p>
+          <div class="warnbox" id="toolsNote" style="display:none"></div>
+          <div class="card" style="margin:12px 0 0;background:#0f172a;color:#d1fae5;border:0;
+               font:12.5px/1.6 ui-monospace,Consolas,monospace;border-radius:10px;padding:12px;
+               height:180px;overflow:auto;white-space:pre-wrap;display:none" id="toolOut"></div>
         </div>
+      </section>
+
+      <section class="sec" id="sec-log">
+        <div class="card">
+          <h2>删除审计日志</h2>
+          <p class="hint">本工具每次删除前都会把「路径 + 大小」写入 <span class="mono">%LOCALAPPDATA%\WinDriveCleaner\CleanerLog_&lt;日期&gt;.txt</span>，可随时核对"到底删了什么"。</p>
+          <div class="row">
+            <button class="btn ghost" id="btnLogOpen">打开日志目录</button>
+            <button class="btn ghost" id="btnLogRefresh">刷新日志内容</button>
+            <span class="muted" id="logPath"></span>
+          </div>
+        </div>
+        <div class="card"><div id="logView" class="mono" style="white-space:pre-wrap">加载中…</div></div>
       </section>
 
       <section class="sec" id="sec-disk">
@@ -217,167 +260,411 @@
 <script>
 "use strict";
 var api = window;
-function fmt(n){ if(n==null) return "0 B";
-  var u=["B","KB","MB","GB","TB"],i=0; var x=Number(n);
-  while(x>=1024&&i<u.length-1){x/=1024;i++;}
-  return (i===0?x.toFixed(0):x.toFixed(2))+" "+u[i]; }
-function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
-  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},2200);}
-function el(id){return document.getElementById(id);}
 
+/* ---------------- 通用工具 ---------------- */
+function fmt(n){
+  if(n==null) return "0 B";
+  var u=["B","KB","MB","GB","TB"],i=0; var x=Number(n);
+  if(!isFinite(x)) return "-";
+  while(x>=1024&&i<u.length-1){x/=1024;i++;}
+  return (i===0?x.toFixed(0):x.toFixed(2))+" "+u[i];
+}
+function el(id){return document.getElementById(id);}
+function toast(m){
+  var t=el("toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},2600);
+}
+function busy(id,on){ el(id).classList.toggle("on", !!on); }
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function emptyRow(tb,cols,msg){
+  tb.innerHTML='<tr><td colspan="'+cols+'" class="muted">'+esc(msg)+'</td></tr>';
+}
+
+/* ---------------- 异步任务协议 ----------------
+   后端耗时操作立即返回 {started:true}，完成后调用
+   window.__wdcResult(task, {ok, data, error})。
+   这里维护 task -> {resolve,reject} 的等待表。            */
+var WAITERS = {};
+function expect(task){
+  return new Promise(function(resolve,reject){
+    WAITERS[task] = {resolve:resolve, reject:reject};
+  });
+}
+window.__wdcResult = function(task, payload){
+  if(task==="cleanProgress"){ renderCleanProgress(payload && payload.data); return; }
+  var w = WAITERS[task];
+  if(!w){ return; }              // 无等待者（例如窗口已切换），丢弃
+  delete WAITERS[task];
+  if(payload && payload.ok){ w.resolve(payload.data); }
+  else { w.reject(new Error((payload && payload.error) || "未知错误")); }
+};
+/* 触发一次异步任务：先注册等待者，再调后端，避免竞态丢结果 */
+function runTask(task, invoke){
+  var p = expect(task);
+  Promise.resolve(invoke()).catch(function(e){
+    if(WAITERS[task]){ delete WAITERS[task]; }
+    throw e;
+  });
+  return p;
+}
+
+/* ---------------- 导航 ---------------- */
 var titles={clean:"磁盘清理",startup:"开机自启管理",big:"大文件检测",cache:"软件缓存",
-  comms:"通讯缓存",media:"视频媒体",tools:"系统工具",disk:"磁盘信息"};
-document.getElementById("nav").addEventListener("click",function(e){
+  comms:"通讯缓存",media:"视频媒体",tools:"系统工具",log:"清理日志",disk:"磁盘信息"};
+el("nav").addEventListener("click",function(e){
   var b=e.target.closest("button"); if(!b) return;
   var s=b.getAttribute("data-sec");
-  document.querySelectorAll("#nav button").forEach(function(x){x.classList.remove("on");});
+  Array.prototype.forEach.call(document.querySelectorAll("#nav button"),function(x){x.classList.remove("on");});
   b.classList.add("on");
-  document.querySelectorAll(".sec").forEach(function(x){x.classList.remove("on");});
+  Array.prototype.forEach.call(document.querySelectorAll(".sec"),function(x){x.classList.remove("on");});
   el("sec-"+s).classList.add("on");
   el("secTitle").textContent=titles[s];
+  if(s==="log") refreshLog();
 });
 
+/* ---------------- 顶栏 / 磁盘 ---------------- */
 async function loadTop(){
-  try{ var d=await api.apiDiskInfo();
+  try{
+    var d=await api.apiDiskInfo();
     el("adminBadge").textContent=d.admin?"管理员权限":"普通用户";
     el("adminBadge").className="badge "+(d.admin?"ok":"bad");
     el("diskBadge").textContent="C盘 剩余 "+fmt(d.free);
-    el("toolsNote").textContent=d.admin?"":"当前为普通用户：DISM / 压缩将失败，请以管理员身份重新运行本程序。";
+    el("btnElevate").style.display = d.admin ? "none" : "";
+    var note = el("toolsNote");
+    if(!d.admin){
+      note.style.display="";
+      note.innerHTML="当前为普通用户：<b>深度清理 / DISM / 系统盘压缩</b> 将无法完整执行，"+
+        "且 HKLM 开机自启项不可修改。点右上角「提权重启」以管理员身份重新打开本工具。";
+    }else if(!d.compactable){
+      note.style.display="";
+      note.innerHTML="本系统为 Win8/Win7，<b>不支持 LZX 系统盘压缩</b>，该功能会自动跳过。";
+    }else{
+      note.style.display="none";
+    }
   }catch(e){ el("adminBadge").textContent="权限检测失败"; }
 }
-
-window.__onCleanProgress=function(p){
-  var log=el("log");
-  var line="["+p.seq+"/"+p.total+"] "+p.name+"  →  删 "+p.deleted+" 项, "+fmt(p.bytes)+
-    (p.errors?("  !失败"+p.errors):"");
-  log.appendChild(document.createTextNode(line+"\n"));
-  log.scrollTop=log.scrollHeight;
-  el("cleanBar").style.width=Math.round(p.seq/p.total*100)+"%";
-};
-window.__onCleanDone=function(r){
-  el("cleanSum").style.display="";
-  el("sumDel").textContent=r.deleted;
-  el("sumErr").textContent=r.errs;
-  el("sumBytes").textContent=fmt(r.bytes);
-  el("btnClean").disabled=false; el("btnCleanStop").disabled=true;
-  toast(r.dry?"演练完成":"清理完成");
-};
-el("btnClean").addEventListener("click",async function(){
-  var deep=document.querySelector('input[name=mode][value=deep]').checked;
-  var dry=el("dryRun").checked;
-  el("log").textContent=""; el("cleanSum").style.display="none";
-  el("cleanBar").style.width="0%"; document.querySelector(".pg").style.display="block";
-  el("btnClean").disabled=true; el("btnCleanStop").disabled=false;
-  try{ await api.apiClean(deep,dry); }catch(e){ toast("启动失败: "+e); }
-});
-el("btnCleanStop").addEventListener("click",function(){ toast("清理按项执行，无法中途取消，请等待当前项完成"); });
-
-async function loadStartups(){
-  var rows=await api.apiStartupList();
-  var tb=el("startBody"); tb.innerHTML="";
-  el("startCount").textContent="共 "+rows.length+" 项";
-  rows.forEach(function(r){
-    var tr=document.createElement("tr");
-    tr.innerHTML=
-      '<td><label class="sw"><input type="checkbox" '+(r.enabled?"checked":"")+' data-id="'+r.id+'"><span class="tk"></span></label></td>'+
-      '<td>'+esc(r.name)+'</td>'+
-      '<td><span class="pill'+(r.needAdmin?" grey":"")+'">'+esc(r.source)+(r.needAdmin?" · 需管理员":"")+'</span></td>'+
-      '<td class="mono">'+esc(r.target||"(空)")+'</td>'+
-      '<td><button class="btn ghost" data-open="'+esc(r.target||"")+'">打开</button></td>';
-    tb.appendChild(tr);
-  });
-  tb.querySelectorAll('input[type=checkbox]').forEach(function(cb){
-    cb.addEventListener("change",async function(){
-      var id=cb.getAttribute("data-id"); var on=cb.checked;
-      cb.disabled=true;
-      try{ var res=await api.apiStartupToggle(id,on);
-        if(!res.ok){ toast(res.error||"操作失败"); cb.checked=!on; }
-        else toast(res.msg);
-      }catch(e){ toast("错误: "+e); cb.checked=!on; }
-      cb.disabled=false;
-    });
-  });
-  tb.querySelectorAll('button[data-open]').forEach(function(b){
-    b.addEventListener("click",function(){ var p=b.getAttribute("data-open");
-      if(p&&p.indexOf("://")<0&&p.trim()) api.apiOpenFolder(p).catch(function(){}); });
-  });
-}
-el("btnStartScan").addEventListener("click",function(){ loadStartups(); });
-
-el("btnBig").addEventListener("click",async function(){
-  var rows=await api.apiBigFiles(); var tb=el("bigBody"); tb.innerHTML="";
-  rows.forEach(function(r){ var tr=document.createElement("tr");
-    tr.innerHTML='<td>'+fmt(r.bytes)+'</td><td class="mono">'+esc(r.path)+'</td>'+
-      '<td><button class="btn ghost" data-open="'+esc(r.path)+'">打开</button></td>';
-    tb.appendChild(tr); });
-  bindOpen(tb);
-  if(!rows.length) tb.innerHTML='<tr><td colspan="3" class="muted">未发现 ≥500MB 的大文件</td></tr>';
-});
-var cacheRows=[];
-el("btnCache").addEventListener("click",async function(){
-  cacheRows=await api.apiCacheScan(); var tb=el("cacheBody"); tb.innerHTML="";
-  cacheRows.forEach(function(r,i){ var tr=document.createElement("tr");
-    tr.innerHTML='<td><input type="checkbox" data-i="'+i+'"></td><td>'+esc(r.software)+'</td><td>'+fmt(r.bytes)+'</td><td class="mono">'+esc(r.path)+'</td>';
-    tb.appendChild(tr); });
-  if(!cacheRows.length) tb.innerHTML='<tr><td colspan="4" class="muted">未发现 ≥10MB 的软件缓存目录</td></tr>';
-});
-el("btnCacheDel").addEventListener("click",async function(){
-  var sel=[]; document.querySelectorAll('#cacheBody input[type=checkbox]:checked').forEach(function(c){sel.push(Number(c.getAttribute("data-i")));});
-  if(!sel.length){ toast("请先勾选"); return; }
-  if(!confirm("将删除选中 "+sel.length+" 个软件缓存目录，不可恢复，确定？")) return;
-  el("btnCacheDel").disabled=true;
-  try{ var res=await api.apiCacheDelete(sel);
-    toast("已清理 "+res.deleted+" 项，释放 "+fmt(res.bytes));
-    el("btnCache").click();
-  }catch(e){ toast("删除失败: "+e); } finally{ el("btnCacheDel").disabled=false; }
-});
-el("btnComms").addEventListener("click",async function(){
-  var rows=await api.apiCommsScan(); var tb=el("commsBody"); tb.innerHTML="";
-  rows.forEach(function(r){ var tr=document.createElement("tr");
-    tr.innerHTML='<td>'+esc(r.name)+'</td><td>'+fmt(r.bytes)+'</td><td class="mono">'+esc((r.roots||[]).join(" ; "))+'</td>'+
-      '<td><button class="btn ghost" data-open="'+esc((r.roots||[])[0]||"")+'">打开</button></td>';
-    tb.appendChild(tr); });
-  bindOpen(tb);
-  if(!rows.length) tb.innerHTML='<tr><td colspan="4" class="muted">未发现通讯缓存目录</td></tr>';
-});
-el("btnMedia").addEventListener("click",async function(){
-  var rows=await api.apiMediaScan(); var tb=el("mediaBody"); tb.innerHTML="";
-  rows.forEach(function(r){ var tr=document.createElement("tr");
-    tr.innerHTML='<td>'+fmt(r.size)+'</td><td class="mono">'+esc(r.path)+'</td><td><button class="btn ghost" data-open="'+esc(r.path)+'">打开</button></td>';
-    tb.appendChild(tr); });
-  bindOpen(tb);
-  if(!rows.length) tb.innerHTML='<tr><td colspan="3" class="muted">未发现视频媒体文件</td></tr>';
-});
-el("btnDism").addEventListener("click",async function(){
-  if(!confirm("执行 DISM 清理系统更新组件？")) return;
-  el("btnDism").disabled=true; toast("DISM 执行中…");
-  try{ var r=await api.apiDism(false); toast(r.msg); }catch(e){ toast("失败: "+e); }
-  finally{ el("btnDism").disabled=false; }
-});
-el("btnCompact").addEventListener("click",async function(){
-  if(!confirm("执行系统盘 compact LZX 压缩？过程较长且占用 CPU。")) return;
-  el("btnCompact").disabled=true; toast("压缩执行中…");
-  try{ var r=await api.apiCompact(false); toast(r.msg); }catch(e){ toast("失败: "+e); }
-  finally{ el("btnCompact").disabled=false; }
+el("btnElevate").addEventListener("click",async function(){
+  try{
+    var r=await api.apiElevate();
+    toast(r.msg);
+  }catch(e){ toast("提权失败: "+e); }
 });
 
-async function loadDisk(){ var d=await api.apiDiskInfo();
+async function loadDisk(){
+  var d=await api.apiDiskInfo();
+  var used = d.total? Math.round((1-d.free/d.total)*100) : 0;
   el("diskInfo").innerHTML=
     '<div class="kpi">'+
-    '<div class="b"><div class="n">'+fmt(d.free)+'</div><div class="l">C盘剩余空间</div></div>'+
-    '<div class="b"><div class="n">'+fmt(d.total)+'</div><div class="l">C盘总容量</div></div>'+
-    '<div class="b"><div class="n">'+(d.total?Math.round((1-d.free/d.total)*100):0)+'%</div><div class="l">已用占比</div></div>'+
+    '<div class="b"><div class="n">'+fmt(d.free)+'</div><div class="l">'+esc(d.systemDrive||"系统盘")+' 剩余空间</div></div>'+
+    '<div class="b"><div class="n">'+fmt(d.total)+'</div><div class="l">总容量</div></div>'+
+    '<div class="b"><div class="n">'+used+'%</div><div class="l">已用占比</div></div>'+
     '<div class="b"><div class="n">'+(d.admin?"是":"否")+'</div><div class="l">管理员运行</div></div>'+
+    '<div class="b"><div class="n">'+(d.compactable?"支持":"不支持")+'</div><div class="l">系统盘压缩</div></div>'+
     '</div>';
 }
 
-function bindOpen(tb){ tb.querySelectorAll('button[data-open]').forEach(function(b){
-  b.addEventListener("click",function(){ var p=b.getAttribute("data-open");
-    if(p&&p.indexOf("://")<0&&p.trim()) api.apiOpenFolder(p).catch(function(){}); }); }); }
-function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
-  return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+/* ---------------- 磁盘清理 ---------------- */
+function logLine(s){
+  var log=el("log");
+  log.appendChild(document.createTextNode(s+"\n"));
+  log.scrollTop=log.scrollHeight;
+}
 
-loadTop(); loadStartups(); loadDisk();
+el("btnClean").addEventListener("click",function(){
+  var deep=document.querySelector('input[name=mode][value=deep]').checked;
+  var dry=el("dryRun").checked;
+  el("log").textContent=""; el("cleanSum").style.display="none";
+  el("cleanBar").style.width="0%"; el("pgCard").style.display="";
+  el("btnClean").disabled=true; el("btnCleanStop").disabled=false;
+  busy("cleanBusy",true);
+  runTask("clean", function(){ return api.apiClean(deep,dry); })
+    .then(function(r){ renderCleanDone(r); })
+    .catch(function(e){ toast("清理失败: "+e.message); })
+    .finally(function(){
+      el("btnClean").disabled=false; el("btnCleanStop").disabled=true;
+      busy("cleanBusy",false);
+      loadTop();
+    });
+});
+
+/* 进度由后端以 task="cleanProgress" 推送，见上方 __wdcResult 分支 */
+function renderCleanProgress(p){
+  if(!p) return;
+  var verb = (p.deleted>0||p.bytes>0) ? "已清理" : (p.errors>0 ? "部分受限" : "跳过");
+  logLine("["+p.seq+"/"+p.total+"] "+p.name+"  →  "+verb+"  "+fmt(p.bytes)+
+          (p.errors?("  !失败"+p.errors):""));
+  logLine("           └ "+p.path);
+  if(p.total) el("cleanBar").style.width=Math.round(p.seq/p.total*100)+"%";
+}
+function renderCleanDone(r){
+  el("cleanSum").style.display="";
+  var cells=[
+    [String(r.deleted), r.dry?"预计删除项":"删除项"],
+    [String(r.errs), "失败项"],
+    [fmt(r.bytes), r.dry?"预计释放":"统计释放"]
+  ];
+  if(!r.dry && r.actualGain>0) cells.push([fmt(r.actualGain), "磁盘实测变化"]);
+  el("cleanKpi").innerHTML = cells.map(function(c){
+    return '<div class="b"><div class="n">'+esc(c[0])+'</div><div class="l">'+esc(c[1])+'</div></div>';
+  }).join("");
+  var notes=[];
+  if(r.cancelled) notes.push("<b>已按你的要求中止</b>：当前清理项已完整做完，剩余项未执行。");
+  if(r.dry) notes.push("演练模式：未删除任何文件。");
+  if(r.errs>0) notes.push("有 "+r.errs+" 项因文件占用或权限不足未清理（不影响其余结果）。");
+  if(!r.dry && r.freeBefore>0 && r.freeAfter>0){
+    notes.push("磁盘剩余："+fmt(r.freeBefore)+" → "+fmt(r.freeAfter)+
+      (r.actualGain>0 ? "" : "（文件删除后磁盘计数可能略有延迟，以统计值为准）"));
+  }
+  el("cleanNote").innerHTML = notes.length? notes.map(function(s){return esc(s);}).join("<br>") : "";
+  toast(r.cancelled ? (r.dry?"演练已中止":"清理已中止") : (r.dry?"演练完成":"清理完成"));
+}
+el("btnCleanStop").addEventListener("click",function(){
+  el("btnCleanStop").disabled=true;
+  api.apiCancelClean().catch(function(){});
+  toast("已请求停止，当前项完成后结束");
+});
+
+/* ---------------- 开机自启 ---------------- */
+el("btnStartScan").addEventListener("click",function(){ loadStartups(); });
+
+async function loadStartups(){
+  busy("startBusy",true);
+  try{
+    var rows = await api.apiStartupList();
+    var tb=el("startBody"); tb.innerHTML="";
+    el("startCount").textContent="共 "+rows.length+" 项";
+    if(!rows.length){ emptyRow(tb,5,"未发现开机自启项"); return; }
+    rows.forEach(function(r){
+      var tr=document.createElement("tr");
+
+      var tdSw=document.createElement("td");
+      var lb=document.createElement("label"); lb.className="sw";
+      var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!r.enabled;
+      cb.setAttribute("data-id", r.id);           /* 用 setAttribute 而非字符串拼 HTML，杜绝注入 */
+      if(r.needAdmin) cb.disabled=true;
+      var tk=document.createElement("span"); tk.className="tk";
+      lb.appendChild(cb); lb.appendChild(tk);
+      tdSw.appendChild(lb);
+      cb.addEventListener("change",async function(){
+        var id=cb.getAttribute("data-id"), on=cb.checked;
+        cb.disabled=true;
+        try{
+          var res=await api.apiStartupToggle(id,on);
+          if(!res.ok){ toast(res.error||"操作失败"); cb.checked=!on; if(r.needAdmin) cb.disabled=false; }
+          else toast(res.msg);
+        }catch(e){ toast("错误: "+e.message); cb.checked=!on; if(r.needAdmin) cb.disabled=false; }
+        cb.disabled = !!r.needAdmin;
+      });
+      tr.appendChild(tdSw);
+
+      var tdN=document.createElement("td"); tdN.textContent=r.name; tr.appendChild(tdN);
+
+      var tdS=document.createElement("td");
+      var pill=document.createElement("span");
+      pill.className="pill"+(r.needAdmin?" grey":"");
+      pill.textContent=r.source+(r.needAdmin?" · 需管理员":"");
+      tdS.appendChild(pill); tr.appendChild(tdS);
+
+      var tdT=document.createElement("td"); tdT.className="mono";
+      tdT.textContent=r.target||"(空)"; tr.appendChild(tdT);
+
+      var tdB=document.createElement("td");
+      var b=document.createElement("button"); b.className="btn ghost sm"; b.textContent="打开";
+      b.addEventListener("click",function(){
+        var p=r.target||"";
+        if(!p.trim()||p.indexOf("://")>=0) return;
+        api.apiOpenFolder(p).catch(function(){});
+      });
+      tdB.appendChild(b); tr.appendChild(tdB);
+      tb.appendChild(tr);
+    });
+  }catch(e){
+    el("startCount").textContent="读取失败: "+e.message;
+  }finally{
+    busy("startBusy",false);
+  }
+}
+
+/* ---------------- 大文件 ---------------- */
+el("btnBig").addEventListener("click",function(){
+  el("btnBig").disabled=true; busy("bigBusy",true);
+  var tb=el("bigBody"); tb.innerHTML='<tr><td colspan="3" class="muted">正在全盘扫描…</td></tr>';
+  runTask("bigfiles", function(){ return api.apiBigFiles(); })
+    .then(function(r){
+      tb.innerHTML="";
+      if(!r.items.length){ emptyRow(tb,3,"未发现 ≥500MB 的大文件"); return; }
+      r.items.forEach(function(f){
+        var tr=document.createElement("tr");
+        var a=document.createElement("td"); a.textContent=fmt(f.bytes);
+        var b=document.createElement("td"); b.className="mono"; b.textContent=f.path;
+        var c=document.createElement("td");
+        var btn=document.createElement("button"); btn.className="btn ghost sm"; btn.textContent="打开";
+        btn.addEventListener("click",function(){ api.apiOpenFolder(f.path).catch(function(){}); });
+        c.appendChild(btn);
+        tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tb.appendChild(tr);
+      });
+      toast("共 "+r.items.length+" 个大文件，合计 "+fmt(r.total));
+    })
+    .catch(function(e){ emptyRow(tb,3,"扫描失败: "+e.message); })
+    .finally(function(){ el("btnBig").disabled=false; busy("bigBusy",false); });
+});
+
+/* ---------------- AppData 软件缓存 ---------------- */
+var cacheRows=[];
+el("btnCache").addEventListener("click",function(){
+  el("btnCache").disabled=true; busy("cacheBusy",true);
+  var tb=el("cacheBody"); tb.innerHTML='<tr><td colspan="4" class="muted">正在统计…</td></tr>';
+  runTask("cache", function(){ return api.apiCacheScan(); })
+    .then(function(r){
+      cacheRows=r.items||[];
+      tb.innerHTML="";
+      if(!cacheRows.length){ emptyRow(tb,4,"未发现 ≥10MB 的软件缓存目录"); el("btnCacheDel").disabled=true; return; }
+      cacheRows.forEach(function(c,i){
+        var tr=document.createElement("tr");
+        var tdC=document.createElement("td");
+        var cb=document.createElement("input"); cb.type="checkbox";
+        cb.setAttribute("data-path", c.path);        /* 按路径而非序号回传，杜绝删错 */
+        cb.addEventListener("change",syncCacheDelBtn);
+        tdC.appendChild(cb);
+        var tdN=document.createElement("td"); tdN.textContent=c.software;
+        var tdB=document.createElement("td"); tdB.textContent=fmt(c.bytes);
+        var tdP=document.createElement("td"); tdP.className="mono"; tdP.textContent=c.path;
+        tr.appendChild(tdC); tr.appendChild(tdN); tr.appendChild(tdB); tr.appendChild(tdP);
+        tb.appendChild(tr);
+      });
+      syncCacheDelBtn();
+      toast("共 "+cacheRows.length+" 个目录，合计 "+fmt(r.total));
+    })
+    .catch(function(e){ emptyRow(tb,4,"扫描失败: "+e.message); })
+    .finally(function(){ el("btnCache").disabled=false; busy("cacheBusy",false); });
+});
+function syncCacheDelBtn(){
+  var n=document.querySelectorAll('#cacheBody input[type=checkbox]:checked').length;
+  el("btnCacheDel").disabled = n===0;
+  el("btnCacheDel").textContent = n? ("删除所选 ("+n+")") : "删除所选";
+}
+el("btnCacheDel").addEventListener("click",function(){
+  var paths=[];
+  Array.prototype.forEach.call(
+    document.querySelectorAll('#cacheBody input[type=checkbox]:checked'),
+    function(c){ paths.push(c.getAttribute("data-path")); }
+  );
+  if(!paths.length){ toast("请先勾选"); return; }
+  var msg="将删除以下 "+paths.length+" 个软件目录（可能丢失登录态/设置，不可恢复）：\n\n"+
+          paths.join("\n")+"\n\n确定继续？";
+  if(!confirm(msg)) return;
+  el("btnCacheDel").disabled=true; busy("cacheBusy",true);
+  runTask("cacheDelete", function(){ return api.apiCacheDelete(paths); })
+    .then(function(r){
+      toast("已清理 "+r.deleted+" 项，释放 "+fmt(r.bytes)+(r.errors?("，"+r.errors+" 项受限"):""));
+      el("btnCache").click();     /* 重新扫描刷新列表 */
+    })
+    .catch(function(e){ toast("删除失败: "+e.message); el("btnCacheDel").disabled=false; })
+    .finally(function(){ busy("cacheBusy",false); });
+});
+
+/* ---------------- 通讯缓存 ---------------- */
+el("btnComms").addEventListener("click",function(){
+  el("btnComms").disabled=true; busy("commsBusy",true);
+  var tb=el("commsBody"); tb.innerHTML='<tr><td colspan="4" class="muted">正在统计…</td></tr>';
+  runTask("comms", function(){ return api.apiCommsScan(); })
+    .then(function(r){
+      tb.innerHTML="";
+      if(!r.items.length){ emptyRow(tb,4,"未发现通讯缓存目录"); return; }
+      r.items.forEach(function(c){
+        var tr=document.createElement("tr");
+        var a=document.createElement("td"); a.textContent=c.name;
+        var b=document.createElement("td"); b.textContent=c.exists?fmt(c.bytes):"—";
+        var d=document.createElement("td"); d.className="mono"; d.textContent=(c.roots||[]).join(" ; ")||"(未安装/无数据)";
+        var e=document.createElement("td");
+        var btn=document.createElement("button"); btn.className="btn ghost sm"; btn.textContent="打开";
+        btn.disabled=!(c.roots&&c.roots.length);
+        btn.addEventListener("click",function(){
+          if(c.roots&&c.roots[0]) api.apiOpenFolder(c.roots[0]).catch(function(){});
+        });
+        e.appendChild(btn);
+        tr.appendChild(a); tr.appendChild(b); tr.appendChild(d); tr.appendChild(e); tb.appendChild(tr);
+      });
+    })
+    .catch(function(e){ emptyRow(tb,4,"扫描失败: "+e.message); })
+    .finally(function(){ el("btnComms").disabled=false; busy("commsBusy",false); });
+});
+
+/* ---------------- 视频媒体 ---------------- */
+el("btnMedia").addEventListener("click",function(){
+  el("btnMedia").disabled=true; busy("mediaBusy",true);
+  var tb=el("mediaBody"); tb.innerHTML='<tr><td colspan="3" class="muted">正在扫描…</td></tr>';
+  runTask("media", function(){ return api.apiMediaScan(); })
+    .then(function(r){
+      tb.innerHTML="";
+      if(!r.items.length){ emptyRow(tb,3,"未发现视频媒体文件"); return; }
+      r.items.slice(0,100).forEach(function(m){
+        var tr=document.createElement("tr");
+        var a=document.createElement("td"); a.textContent=fmt(m.size);
+        var b=document.createElement("td"); b.className="mono"; b.textContent=m.path;
+        var c=document.createElement("td");
+        var btn=document.createElement("button"); btn.className="btn ghost sm"; btn.textContent="打开";
+        btn.addEventListener("click",function(){ api.apiOpenFolder(m.path).catch(function(){}); });
+        c.appendChild(btn);
+        tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tb.appendChild(tr);
+      });
+      toast("共 "+r.items.length+" 个视频文件，合计 "+fmt(r.total));
+    })
+    .catch(function(e){ emptyRow(tb,3,"扫描失败: "+e.message); })
+    .finally(function(){ el("btnMedia").disabled=false; busy("mediaBusy",false); });
+});
+
+/* ---------------- 系统工具 ---------------- */
+function toolRun(task, label, invoke){
+  el("btnDism").disabled=true; el("btnCompact").disabled=true;
+  busy("toolsBusy",true); el("toolsBusyTxt").textContent=label+" 执行中…";
+  var out=el("toolOut"); out.style.display=""; out.textContent="";
+  runTask(task, invoke)
+    .then(function(r){
+      if(typeof r==="string"){ out.textContent=r; }
+      else{
+        if(r.output) out.textContent=r.output;
+        out.textContent += (out.textContent?"\n\n":"") + (r.msg||"完成");
+      }
+      toast((r&&r.msg)||(label+"完成"));
+    })
+    .catch(function(e){ out.textContent="失败: "+e.message; toast(label+"失败: "+e.message); })
+    .finally(function(){
+      el("btnDism").disabled=false; el("btnCompact").disabled=false;
+      busy("toolsBusy",false);
+    });
+}
+el("btnDism").addEventListener("click",function(){
+  if(!confirm("执行 DISM 清理系统更新组件？可能需要数分钟，期间请勿关机。")) return;
+  toolRun("dism","DISM", function(){ return api.apiDism(); });
+});
+el("btnCompact").addEventListener("click",function(){
+  if(!confirm("执行系统盘 compact LZX 压缩？过程较长且占用 CPU，勿强制断电。")) return;
+  toolRun("compact","系统盘压缩", function(){ return api.apiCompact(); });
+});
+
+/* ---------------- 清理日志 ---------------- */
+el("btnLogOpen").addEventListener("click",function(){ api.apiOpenFolder(logDir()).catch(function(){}); });
+el("btnLogRefresh").addEventListener("click",refreshLog);
+function logDir(){ return "%LOCALAPPDATA%\\WinDriveCleaner"; }
+function refreshLog(){
+  runTask("readLog", function(){ return api.apiReadLog(); })
+    .then(function(r){
+      el("logPath").textContent = r.file ? (r.file + " · " + r.count + " 行") : "";
+      el("logView").textContent = r.content || "（尚无清理日志）";
+    })
+    .catch(function(e){ el("logView").textContent = "读取失败: "+e.message; });
+}
+
+/* ---------------- 初始化 ---------------- */
+loadTop();
+loadStartups();
+loadDisk();
+refreshLog();
 </script>
 </body>
 </html>

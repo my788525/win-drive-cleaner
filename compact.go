@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 )
@@ -23,7 +23,36 @@ func compactSupported() bool {
 	return strings.Contains(s, "lzx") || strings.Contains(s, "compress")
 }
 
-// RunCompact 交互式执行系统盘压缩。dryRun 时只打印将做什么。
+// CompactExecute 执行系统盘压缩的**核心逻辑**，不依赖控制台输入，
+// 因此可被 GUI（无控制台句柄）安全调用。返回 (结果, error)。
+func CompactExecute(dryRun bool) (interface{}, error) {
+	if !compactSupported() {
+		return nil, errors.New("本系统（Win8/Win7）不支持 LZX 系统压缩，已跳过")
+	}
+	if dryRun {
+		return "演练模式，未执行任何操作", nil
+	}
+	if !isAdmin() {
+		return nil, errors.New("系统盘压缩需要管理员权限，请以管理员身份运行本工具")
+	}
+	cmd := exec.Command("compact", "/Compact", "/BaseFile:C:\\compact.sys", "/EssentialDirectories")
+	cmd.Stdin = nil // 无控制台时显式置空，避免 Wait 卡在读 stdin
+	out, err := cmd.CombinedOutput()
+	tail := outputTail(string(out), 6)
+	// compact 常以非零码结束但压缩实际已完成，故按"有输出即视为已执行"处理
+	if err != nil && strings.TrimSpace(string(out)) == "" {
+		return map[string]interface{}{
+			"ok": false, "output": "", "msg": "compact 执行失败: " + err.Error(),
+		}, nil
+	}
+	return map[string]interface{}{
+		"ok":     true,
+		"output": tail,
+		"msg":    "系统盘压缩完成",
+	}, nil
+}
+
+// RunCompact 交互式执行系统盘压缩（CLI 版，带确认提示）。dryRun 时只打印将做什么。
 func RunCompact(dryRun bool) {
 	fmt.Println()
 	fmt.Println("  ┌─ 系统盘压缩（可选进阶）─")
@@ -41,27 +70,27 @@ func RunCompact(dryRun bool) {
 		return
 	}
 
-	if !isAdmin() {
-		fmt.Println("  系统盘压缩需要管理员权限。请：")
-		fmt.Println("   - 直接双击本工具并选择“以管理员身份运行”，或")
-		fmt.Println("   - 在交互菜单先选 2) 深度清理 触发 UAC 提权后再回来")
-		return
-	}
-
 	if !askYesNo("  确定压缩系统盘（可能需数分钟，期间勿强制断电）?", false) {
 		fmt.Println("  已取消系统盘压缩。")
 		return
 	}
 
 	fmt.Println("  正在压缩系统文件，请稍候（首次约 1-5 分钟）…")
-	cmd := exec.Command("compact", "/Compact", "/BaseFile:C:\\compact.sys", "/EssentialDirectories")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Println("  compact 执行完成或有警告:", err)
-	} else {
-		fmt.Println("  系统盘压缩完成。")
+	res, err := CompactExecute(false)
+	if err != nil {
+		fmt.Println("  ", err)
+		return
+	}
+	m, _ := res.(map[string]interface{})
+	if m == nil {
+		fmt.Println("  ", res)
+		return
+	}
+	if out, _ := m["output"].(string); out != "" {
+		fmt.Println(out)
+	}
+	if msg, _ := m["msg"].(string); msg != "" {
+		fmt.Println("  " + msg)
 	}
 }
 

@@ -23,23 +23,36 @@ func isAdmin() bool {
 
 // elevateSelf 以管理员身份重新启动自身，携带原有参数并追加 --elevated。
 func elevateSelf() error {
+	return elevateSelfWithArgs()
+}
+
+// elevateSelfWithArgs 以管理员身份重新启动自身，在原有参数基础上追加 extraArgs。
+//
+// 用于 GUI 场景：普通模式下启动的 GUI 进程 os.Args 里没有 "--gui"，
+// 直接复用 elevateSelf 会退回交互菜单，所以需显式补上 --gui。
+func elevateSelfWithArgs(extraArgs ...string) error {
 	exe, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("无法定位自身路径: %w", err)
 	}
 
 	var args []string
+	seen := map[string]bool{"--no-uac": true, "--elevated": true}
 	for _, a := range os.Args[1:] {
-		if a == "--no-uac" {
+		if a == "--no-uac" || a == "--elevated" {
 			continue
 		}
-		args = append(args, a)
+		if !seen[a] {
+			seen[a] = true
+			args = append(args, a)
+		}
 	}
+	args = append(args, extraArgs...)
 	args = append(args, "--elevated")
 
 	verb := syscall.StringToUTF16Ptr("runas")
 	file := syscall.StringToUTF16Ptr(exe)
-	paramStr := syscall.StringToUTF16Ptr(strings.Join(args, " "))
+	paramStr := syscall.StringToUTF16Ptr(quoteArgs(args))
 	dir := syscall.StringToUTF16Ptr("")
 
 	const (
@@ -62,4 +75,17 @@ func elevateSelf() error {
 		return fmt.Errorf("启动提权进程失败 (code=%d)", ret)
 	}
 	return nil
+}
+
+// quoteArgs 把参数数组拼成命令行字符串，含空格的参数加引号。
+func quoteArgs(args []string) string {
+	out := make([]string, 0, len(args))
+	for _, a := range args {
+		if strings.ContainsAny(a, " \t") {
+			out = append(out, `"`+a+`"`)
+			continue
+		}
+		out = append(out, a)
+	}
+	return strings.Join(out, " ")
 }

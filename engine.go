@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"sync/atomic"
 )
 
 // Mode 描述清理模式。
@@ -33,6 +34,20 @@ type Result struct {
 
 // DryRun 控制是否真正删除。
 var DryRun bool
+
+// cleanCancel 请求中止当前清理。GUI 的"停止"按钮置位此标志，
+// runItems 会在**当前项做完之后**停下——绝不在删除一半的目录中途收手，
+// 以免留下损坏的目录结构。
+var cleanCancel atomic.Bool
+
+// RequestCleanCancel 请求中止清理。
+func RequestCleanCancel() { cleanCancel.Store(true) }
+
+// CleanCancelled 读取中止标志。
+func CleanCancelled() bool { return cleanCancel.Load() }
+
+// ResetCleanCancel 在新一轮清理开始前清标志。
+func ResetCleanCancel() { cleanCancel.Store(false) }
 
 // standardItems 普通清理：低风险、快速、不影响系统可用性。
 func standardItems() []CleanItem {
@@ -171,7 +186,9 @@ func walkSize(root string) (int64, int64) {
 var OnProgress func(seq int, total int, it CleanItem, res *Result)
 
 // runItems 按模式执行全部条目，逐条触发 OnProgress（实时可见进度）。
+// 每项**做完之后**检查中止标志：保证不会在删除一半的目录中途收手。
 func runItems(includeDeep bool) []*Result {
+	ResetCleanCancel()
 	items := collectItems(includeDeep)
 	out := make([]*Result, 0, len(items))
 	total := len(items)
@@ -180,6 +197,10 @@ func runItems(includeDeep bool) []*Result {
 		out = append(out, res)
 		if OnProgress != nil {
 			OnProgress(i+1, total, it, res)
+		}
+		if CleanCancelled() {
+			// 已完成当前项，安全停下；剩余项不执行
+			break
 		}
 	}
 	return out

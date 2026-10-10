@@ -2,16 +2,66 @@ package main
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
-// RunDismCleanup 运行 DISM 组件清理（可选）。执行前打印固定提示并征求确认。
-// dryRun 时只打印将执行什么，不真正运行。
+// outputTail 取命令输出末尾 n 行非空文本，作为执行摘要反馈给用户
+// （DISM / compact 的完整输出动辄上百行，全塞进 GUI 只会淹没界面）。
+func outputTail(s string, n int) string {
+	lines := strings.Split(s, "\n")
+	out := make([]string, 0, n)
+	for i := len(lines) - 1; i >= 0 && len(out) < n; i-- {
+		t := strings.TrimSpace(lines[i])
+		if t != "" {
+			out = append(out, t)
+		}
+	}
+	// 反转回正序
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return strings.Join(out, "\n")
+}
+
+// DismExecute 执行 DISM 组件清理的**核心逻辑**，不依赖控制台输入。
+//
+// 与 RunDismCleanup 的区别：这里不做 y/n 确认、不读 stdin，
+// 因此可以安全地被 GUI（无控制台句柄）调用。返回 (结果消息, error)。
+// dryRun=true 时只说明将执行什么，不真正运行。
+func DismExecute(dryRun bool) (interface{}, error) {
+	if dryRun {
+		return "演练模式，未执行任何操作", nil
+	}
+	if !isAdmin() {
+		return nil, errors.New("DISM 需要管理员权限，请以管理员身份运行本工具")
+	}
+	cmd := exec.Command("DISM", "/Online", "/Cleanup-Image", "/StartComponentCleanup")
+	cmd.Stdin = nil // 无控制台时显式置空，避免 Wait 卡在读 stdin
+	out, err := cmd.CombinedOutput()
+	// DISM 的进度输出走 stderr 之外的通道也会合并进来，取尾部若干行做摘要
+	tail := outputTail(string(out), 6)
+	if err != nil {
+		return map[string]interface{}{
+			"ok":     false,
+			"output": tail,
+			"msg":    "DISM 执行未成功完成: " + err.Error(),
+		}, nil
+	}
+	return map[string]interface{}{
+		"ok":     true,
+		"output": tail,
+		"msg":    "DISM 组件清理完成",
+	}, nil
+}
+
+// RunDismCleanup 运行 DISM 组件清理（CLI 版，带确认提示）。
 func RunDismCleanup(dryRun bool) {
 	fmt.Println()
 	fmt.Println("  ┌─ DISM 组件清理（可选）─")
@@ -25,20 +75,23 @@ func RunDismCleanup(dryRun bool) {
 		fmt.Println("  已取消 DISM 组件清理。")
 		return
 	}
-	if !isAdmin() {
-		fmt.Println("  DISM 需要管理员权限，请先以管理员身份运行本工具（或在菜单选深度清理触发提权）。")
-		return
-	}
 	fmt.Println("  正在运行 DISM，请稍候…")
-	cmd := exec.Command("DISM", "/Online", "/Cleanup-Image", "/StartComponentCleanup")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Println("  DISM 执行失败或未完成:", err)
+	res, err := DismExecute(false)
+	if err != nil {
+		fmt.Println("  ", err)
 		return
 	}
-	fmt.Println("  DISM 组件清理完成。")
+	m, _ := res.(map[string]interface{})
+	if m == nil {
+		fmt.Println("  ", res)
+		return
+	}
+	if out, _ := m["output"].(string); out != "" {
+		fmt.Println(out)
+	}
+	if msg, _ := m["msg"].(string); msg != "" {
+		fmt.Println("  " + msg)
+	}
 }
 
 // PackLeftovers 把若干临时目录中"删不掉/仍残留"的小文件压缩成一个 zip，便于用户手动转移/删除。
